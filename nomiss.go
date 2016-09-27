@@ -3,25 +3,15 @@ package main
 import (
 	"log"
 	"net/http"
-	"lib"
-	"couchbase"
 	"router"
+	"lib"
 )
 
 func main() {
 	http.HandleFunc("/",index)
 
-
-
 	//获取评论
-	http.HandleFunc("/getcommentsbyid",couchbase.GetComments)
-	http.HandleFunc("/getcommentsbynewid",couchbase.GetCommentsByNewId)
-
-	//http.HandleFunc("/",entity.GetStream)
-
-
-
-
+	router.CommentRouter()
 
 	//公共路由
 	router.CommonRouter()
