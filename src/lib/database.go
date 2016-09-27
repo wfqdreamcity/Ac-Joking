@@ -4,13 +4,8 @@ import (
 	"log"
 	"database/sql"
 	_"github.com/go-sql-driver/mysql"
+	"fmt"
 )
-
-const driver string = "mysql"
-const userName string  ="next_tech"
-const password string  ="00e4398aa6"
-const host string = "tapi01.nomiss.hb02.allydata.cn:3306"
-const database string = "nomiss"
 
 var DB *sql.DB
 var err error
@@ -25,4 +20,6 @@ func init(){
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	fmt.Println("Mysql is ok!")
 }

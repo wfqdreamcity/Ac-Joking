@@ -13,9 +13,6 @@ import (
 
 var Eclient *elastic.Client
 
-//const elastichost string ="http://tapi01.nomiss.hb02.allydata.cn:9200"
-const elastichost string ="http://localhost:9200"
-
 func init(){
 	// Create a client
 	cl, err := elastic.NewClient(

@@ -10,7 +10,8 @@ var Rclient *redis.Client
 func init(){
 
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     RedisAddr,
+		Password: RedisPassword,
 		DB:       0,  // use default DB
 	})
 

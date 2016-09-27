@@ -4,39 +4,46 @@ import (
 	"log"
 	"net/http"
 	"lib"
-	"entity"
-	//"couchbase"
+	"couchbase"
+	"router"
 )
 
-
-
 func main() {
-	http.HandleFunc("/test",gethot)
+	http.HandleFunc("/",index)
 
-	//实体相关api
-	http.HandleFunc("/getentitylist",entity.GetEntityList)
-	//http.HandleFunc("/getentityes",entity.IndexEsearch)
+
 
 	//获取评论
-	//http.HandleFunc("/getcommentsbyid",couchbase.GetComments)
-	//http.HandleFunc("/getcommentsbynewid",couchbase.GetCommentsByNewId)
+	http.HandleFunc("/getcommentsbyid",couchbase.GetComments)
+	http.HandleFunc("/getcommentsbynewid",couchbase.GetCommentsByNewId)
 
-	http.HandleFunc("/",entity.GetStream)
+	//http.HandleFunc("/",entity.GetStream)
 
-	http.HandleFunc("/gettoken",lib.GetToken)
-	http.HandleFunc("/checktoken",lib.CheckToken)
+
+
+
+
+	//公共路由
+	router.CommonRouter()
+
+	//实体api
+	router.EntityRouter()
+
+
+
+
 	err := http.ListenAndServe(":8888" , nil)
 	if err != nil {
-		log.Fatal("Listening fail!")
+		log.Fatal("Listening fail port 8888 !")
 	}
 
 }
 
 
-func gethot(rw http.ResponseWriter,r *http.Request) {
+func index(rw http.ResponseWriter,r *http.Request) {
 
 	message := "欢迎使用nomiss golang api"
 
-	lib.Error(rw , message)
+	lib.Success(rw , message)
 }
 

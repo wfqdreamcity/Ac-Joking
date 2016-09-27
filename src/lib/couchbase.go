@@ -2,13 +2,12 @@ package lib
 
 import (
 	"gopkg.in/couchbase/gocb.v1"
+	"fmt"
 )
 
 var cluster *gocb.Cluster
 
-const couchbasehost  = "couchbase://tapi01.nomiss.hb02.allydata.cn"
-
-func init__(){
+func init(){
 	clu, _ := gocb.Connect(couchbasehost)
 	cluster = clu
 }
@@ -19,6 +18,8 @@ func OpenBucket(selectbucket string) (*gocb.Bucket ,error){
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("Couchbase is ok !")
 
 	return bucket,nil
 
