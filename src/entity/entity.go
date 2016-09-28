@@ -17,6 +17,11 @@ type Entityinfo struct {
 
 func GetEntityList(rw http.ResponseWriter , r *http.Request){
 
+	//token 验证
+	if (!lib.CheckToken(rw,r)){
+		return
+	}
+
 	size := 10
 	page := 1
 
@@ -61,6 +66,11 @@ func GetEntityList(rw http.ResponseWriter , r *http.Request){
 
 func IndexEsearch(rw http.ResponseWriter ,r *http.Request){
 
+	//token 验证
+	if (!lib.CheckToken(rw,r)){
+		return
+	}
+
 	page :=  1
 	size := 10
 	userId :="0"
@@ -76,7 +86,7 @@ func IndexEsearch(rw http.ResponseWriter ,r *http.Request){
 		userId = r.Form["userId"][0]
 	}
 
-	list , err := elasticsearch.Esearch(page , size,userId)
+	list , err := elasticsearch.Esearch(page , size , userId)
 
 	if err != nil {
 		lib.Error(rw , err.Error())

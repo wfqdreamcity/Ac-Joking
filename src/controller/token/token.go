@@ -44,26 +44,6 @@ func GetToken(rw http.ResponseWriter , r *http.Request){
 	lib.Success(rw,token)
 }
 
-//token 验证
-func CheckToken(token string) (bool , error){
-
-
-	//redis token检测
-	value , err := lib.Rclient.Get("app_token_check:"+token).Result()
-	if err != nil {
-		return false , errors.New("get token fail (from redis) :")
-	}
-
-	if value != token {
-		return false , errors.New("token is out of expire or get the wrong token")
-	}
-
-	return true , nil
-
-
-
-}
-
 //获取token （更新token）
 func getTokenInfo(appKey , secretkey string) (string,error){
 
