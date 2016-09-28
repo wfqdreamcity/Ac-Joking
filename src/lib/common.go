@@ -7,7 +7,7 @@ import (
 	"errors"
 )
 
-
+//格式化成功输出
 func Success(rw http.ResponseWriter , args ...interface{}){
 
 	var data map[string]interface{}
@@ -30,7 +30,7 @@ func Success(rw http.ResponseWriter , args ...interface{}){
 	io.WriteString(rw ,list)
 
 }
-
+//格式化错误输出
 func Error(rw http.ResponseWriter , args ...interface{}){
 	var data map[string]interface{}
 	var list string
@@ -51,7 +51,7 @@ func Error(rw http.ResponseWriter , args ...interface{}){
 
 	io.WriteString(rw ,list)
 }
-
+//token 验证（显示处理）
 func CheckToken(rw http.ResponseWriter ,r *http.Request) bool{
 
 	var tokens string
@@ -73,7 +73,7 @@ func CheckToken(rw http.ResponseWriter ,r *http.Request) bool{
 	}
 }
 
-//token 验证
+//token 验证（逻辑处理）
 func checkToken(token string) (bool , error){
 
 
@@ -91,4 +91,25 @@ func checkToken(token string) (bool , error){
 
 
 
+}
+
+//验证请求参数
+//验证输入的参数是否是否缺失，
+//agrs 为必要参数的字符串类型
+func CheckParameter(rw http.ResponseWriter,r *http.Request,agrs ...interface{}) (map[string]string ,bool){
+	para := make(map[string]string)
+
+	r.ParseForm()
+	for _, v := range agrs {
+		if key , ok := v.(string);ok {
+			if len(r.Form[key]) >0 {
+				para[key] =r.Form[key][0]
+			}else {
+				Error(rw ,"oop "+key+" is required !!")
+				return para , false
+			}
+		}
+
+	}
+	return para , true
 }
