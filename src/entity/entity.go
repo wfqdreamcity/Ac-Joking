@@ -17,14 +17,8 @@ type Entityinfo struct {
 
 func GetEntityList(rw http.ResponseWriter , r *http.Request){
 
-	//token 验证
-	if (!lib.CheckToken(rw,r)){
-		return
-	}
-
 	size := 10
 	page := 1
-
 
 	r.ParseForm()
 	if len(r.Form["page"]) > 0 {
@@ -65,11 +59,6 @@ func GetEntityList(rw http.ResponseWriter , r *http.Request){
 }
 
 func IndexEsearch(rw http.ResponseWriter ,r *http.Request){
-
-	//token 验证
-	if (!lib.CheckToken(rw,r)){
-		return
-	}
 
 	page :=  1
 	size := 10

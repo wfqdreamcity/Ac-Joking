@@ -7,22 +7,18 @@ import (
 	"lib"
 )
 
+
+var ServeMuxCus = lib.DefaultServeMux
+
 func main() {
-	http.HandleFunc("/",index)
-
-	//获取评论
-	router.CommentRouter()
-
-	//公共路由
-	router.CommonRouter()
-
-	//实体api
-	router.EntityRouter()
 
 
+	lib.HandleFunc("/",index)
 
+	//引入路由
+	router.Router()
 
-	err := http.ListenAndServe(":8888" , nil)
+	err := http.ListenAndServe(":8888" , ServeMuxCus)
 	if err != nil {
 		log.Fatal("Listening fail port 8888 !")
 	}
@@ -36,4 +32,3 @@ func index(rw http.ResponseWriter,r *http.Request) {
 
 	lib.Success(rw , message)
 }
-

@@ -8,28 +8,26 @@ import (
 	"controller/token"
 	"entity"
 	"couchbase"
+	"lib"
 )
 func HandleFuncRouter(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	http.HandleFunc(pattern , handler)
 }
 
-func CommonRouter()  {
+func Router()  {
 
-	http.HandleFunc("/gettoken",token.GetToken)
-	//http.HandleFunc("/checktoken",token.CheckToken)
-}
-
+	//获取token
+	lib.HandleFunc("/gettoken",token.GetToken)
 
 
-func EntityRouter(){
-	HandleFuncRouter("/getentitylist",entity.GetEntityList)
-	HandleFuncRouter("/getentityes",entity.IndexEsearch)
-}
 
-func CommentRouter(){
+	lib.HandleFuncMiddle("/getentitylist",entity.GetEntityList)
+	lib.HandleFuncMiddle("/getentityes",entity.IndexEsearch)
+
+
 	//获取评论
-	http.HandleFunc("/getcommentsbyid",couchbase.GetComments)
-	http.HandleFunc("/getcommentsbynewid",couchbase.GetCommentsByNewId)
+	lib.HandleFuncMiddle("/getcommentsbyid",couchbase.GetComments)
+	lib.HandleFuncMiddle("/getcommentsbynewid",couchbase.GetCommentsByNewId)
 
 	//http.HandleFunc("/",entity.GetStream)
 }
