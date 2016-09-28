@@ -100,16 +100,31 @@ func CheckParameter(rw http.ResponseWriter,r *http.Request,agrs ...interface{}) 
 	para := make(map[string]string)
 
 	r.ParseForm()
-	for _, v := range agrs {
-		if key , ok := v.(string);ok {
-			if len(r.Form[key]) >0 {
-				para[key] =r.Form[key][0]
-			}else {
-				Error(rw ,"oop "+key+" is required !!")
-				return para , false
+	if r.Method == "GET" {
+		for _, v := range agrs {
+			if key, ok := v.(string); ok {
+				if len(r.Form[key]) > 0 {
+					para[key] = r.Form[key][0]
+				} else {
+					Error(rw, "oop " + key + " is required !!")
+					return para, false
+				}
 			}
-		}
 
+		}
+	}else if r.Method =="POST" {
+		for _, v := range agrs {
+			if key, ok := v.(string); ok {
+				if len(r.Form[key]) > 0 {
+					para[key] = r.Form[key][0]
+				} else {
+					Error(rw, "oop " + key + " is required !!")
+					return para, false
+				}
+			}
+
+		}
 	}
+
 	return para , true
 }
