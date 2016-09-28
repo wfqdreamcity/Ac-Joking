@@ -8,8 +8,15 @@ import (
 var cluster *gocb.Cluster
 
 func init(){
-	clu, _ := gocb.Connect(couchbasehost)
+	clu, err := gocb.Connect(couchbasehost)
+	if err != nil {
+		panic(err)
+	}
+
 	cluster = clu
+
+	fmt.Println("Couchbase is ok !")
+
 }
 
 func OpenBucket(selectbucket string) (*gocb.Bucket ,error){
@@ -18,8 +25,6 @@ func OpenBucket(selectbucket string) (*gocb.Bucket ,error){
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println("Couchbase is ok !")
 
 	return bucket,nil
 
