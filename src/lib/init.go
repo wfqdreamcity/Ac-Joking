@@ -1,5 +1,8 @@
 package lib
 
+//Listen port
+const Listenport string  = ":8888"
+
 //Mysql
 const driver string = "mysql"
 const userName string  ="next_tech"

@@ -18,9 +18,9 @@ func main() {
 	//引入路由
 	router.Router()
 
-	err := http.ListenAndServe(":8888" , ServeMuxCus)
+	err := http.ListenAndServe(lib.Listenport , ServeMuxCus)
 	if err != nil {
-		log.Fatal("Listening fail port 8888 !")
+		log.Fatal("Listening fail port "+lib.Listenport+" !")
 	}
 
 }
