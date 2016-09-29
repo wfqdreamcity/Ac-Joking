@@ -9,27 +9,27 @@ import (
 	//"time"
 )
 
-type video struct {
-	Click_count json.Number
-	Comment_count json.Number
-	Create_time json.Number
-	Duration json.Number
-	Entity_ids string
-	Entity_names string
-	First_class_ids string
-	Id string
-	Is_hot string
-	List_images string
-	List_images_style json.Number
-	New_source string
-	Org_url string
-	Pub_time json.Number
-	Title string
+type news struct {
+	Click_count json.Number `json:"click_count"`
+	Comment_count json.Number `json:"comment_count"`
+	Create_time json.Number	`json:"create_time"`
+	Duration json.Number `json:"duration"`
+	Entity_ids string `json:"entity_ids"`
+	Entity_names string `json:"entity_names"`
+	First_class_ids string `json:"first_class_ids"`
+	Id string `json:"id"`
+	Is_hot string `json:"is_hot"`
+	List_images string `json:"list_images"`
+	List_images_style json.Number `json:"list_images_style"`
+	New_source string `json:"new_source"`
+	Org_url string `json:"org_url"`
+	Pub_time json.Number `json:"pub_time"`
+	Title string `json:"title"`
 }
 
-func Esearch(page int , size int ,userid string) ([]video ,error){
+func Esearch(page int , size int ,userid string) ([]news ,error){
 
-	list := make([]video , 0)
+	list := make([]news , 0)
 	start := page*size
 
 	query := elastic.NewBoolQuery()
@@ -59,7 +59,7 @@ func Esearch(page int , size int ,userid string) ([]video ,error){
 
 		for _, hit := range searchResult.Hits.Hits {
 
-			var t video
+			var t news
 
 			err := json.Unmarshal(*hit.Source, &t)
 			if err != nil {
@@ -176,4 +176,34 @@ func handTheValue(value ,userid string){
 	}else {
 		lib.Rclient.HSet("Userhistory",userid,value)
 	}
+}
+
+//通过id获取新闻内容
+
+func GetNewsDetailById(id string) *news{
+
+	var new news
+	queryTerm := elastic.NewTermQuery("id",id)
+
+	searchResult , err := lib.Eclient.Search().Index("nm*").Type("news").Query(queryTerm).Pretty(true).Do()
+
+	if err != nil {
+		panic(err)
+	}
+
+	if searchResult.Hits.TotalHits > 0 {
+
+		arr := searchResult.Hits.Hits
+
+
+		err := json.Unmarshal(*arr[0].Source, &new)
+		if err != nil {
+			panic(err)
+		}
+
+
+	}
+
+
+	return &new
 }
