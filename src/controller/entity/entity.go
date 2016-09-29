@@ -17,21 +17,9 @@ type Entityinfo struct {
 
 func GetEntityList(rw http.ResponseWriter , r *http.Request){
 
-	size := 10
-	page := 1
+	start , size := lib.GetPageAndSize(r)
 
-	r.ParseForm()
-	if len(r.Form["page"]) > 0 {
-		page  , _ = strconv.Atoi(r.Form["page"][0])
-	}
-	if len(r.Form["size"]) > 0 {
-		size , _ = strconv.Atoi(r.Form["size"][0])
-	}
-
-	start := page * size
-
-
-	rows, err := lib.DB.Query("select id,name,nicknames,img from entity where nicknames !='' limit ?,?",start, size)
+	rows, err := lib.DB.Query("select id,name,nicknames,img from entity limit ?,?",start, size)
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +37,7 @@ func GetEntityList(rw http.ResponseWriter , r *http.Request){
 
 	for rows.Next() {
 		if err := rows.Scan(&id,&name,&nicknames,&img); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		personinfo = Entityinfo{id,name,nicknames,img}
 		list = append(list , personinfo)
