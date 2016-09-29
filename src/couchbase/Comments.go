@@ -46,30 +46,30 @@ func GetComments(rw http.ResponseWriter ,r *http.Request){
 
 }
 
-func GetCommentsByNewId(rw http.ResponseWriter, r *http.Request){
-
-	var news_id string
+//获取新闻评论
+func GetCommentsByNewId(news_id string,ctype string,start int,size int) []interface{}{
 
 	list := make([]interface{},0)
 
-	r.ParseForm()
-	if len(r.Form["news_id"]) > 0 {
-		news_id = r.Form["news_id"][0]
-	}else {
-		lib.Error(rw , "请输入news_id值")
-		return
+	var query *gocb.N1qlQuery
+	// Use query
+	if ctype == "new" {
+		//最新评论
+		query = gocb.NewN1qlQuery("SELECT * FROM comments WHERE news_id = $1 ORDER BY post_time desc LIMIT $2 OFFSET $3")
+	}else if ctype == "hot"{
+		//最热评论
+		query = gocb.NewN1qlQuery("SELECT * FROM comments WHERE news_id = $1 and up_count > 3 ORDER BY post_time DESC LIMIT $2 OFFSET $3")
 	}
 
-	// Use query
-	query := gocb.NewN1qlQuery("SELECT * FROM comments WHERE news_id = $1")
-	rows, _ := bucket.ExecuteN1qlQuery(query, []interface{}{news_id})
+	rows, _ := bucket.ExecuteN1qlQuery(query, []interface{}{news_id,size,start})
 	defer rows.Close()
 
-	var row interface{}
+	row := make(map[string]interface{})
 	for rows.Next(&row) {
-		list = append(list,row)
+
+		list = append(list,row["comments"])
 	}
 
 
-	lib.Success(rw , list)
+	return list
 }
