@@ -61,7 +61,10 @@ func GetCommentsByNewId(news_id string,ctype string,start int,size int) []interf
 		query = gocb.NewN1qlQuery("SELECT * FROM comments WHERE news_id = $1 and up_count > 3 ORDER BY post_time DESC LIMIT $2 OFFSET $3")
 	}
 
-	rows, _ := bucket.ExecuteN1qlQuery(query, []interface{}{news_id,size,start})
+	rows, err := bucket.ExecuteN1qlQuery(query, []interface{}{news_id,size,start})
+	if err != nil {
+		panic(err)
+	}
 	defer rows.Close()
 
 	row := make(map[string]interface{})
