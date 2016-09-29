@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"errors"
+	"strconv"
 )
 
 //格式化成功输出
@@ -15,9 +16,9 @@ func Success(rw http.ResponseWriter , args ...interface{}){
 
 	data = make(map[string]interface{})
 
-	data["code"] =200
+	data["statusCode"] =200
 	data["msg"] ="ok"
-	data["data"]=args
+	data["data"]=args[0]
 
 	result , err := json.Marshal(data)
 
@@ -37,7 +38,7 @@ func Error(rw http.ResponseWriter , args ...interface{}){
 
 	data = make(map[string]interface{})
 
-	data["code"] =400
+	data["statusCode"] =400
 	data["msg"] =args
 	data["data"]=nil
 
@@ -127,4 +128,24 @@ func CheckParameter(rw http.ResponseWriter,r *http.Request,agrs ...interface{}) 
 	}
 
 	return para , true
+}
+
+//默认分页处理
+func GetPageAndSize(r *http.Request) (int , int){
+
+	page := 0
+	size := 5
+
+	r.ParseForm()
+	if len(r.Form["page"]) > 0 {
+		page , _ = strconv.Atoi(r.Form["page"][0])
+	}
+	if len(r.Form["size"]) > 0 {
+		size , _ = strconv.Atoi(r.Form["size"][0])
+	}
+
+	start := page * size
+
+	return start , size
+
 }
