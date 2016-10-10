@@ -20,6 +20,9 @@ func Router()  {
 	//获取token
 	lib.HandleFunc("/gettoken",token.GetToken)
 
+	//feed流相关
+	lib.HandleFuncMiddle("/gettopnew",news.GetTopNewList)
+
 	//获取文章详情页
 	lib.HandleFuncMiddle("/getnewslist",news.GetNewsList)
 	lib.HandleFuncMiddle("/getnewscontent",news.GetNewsContent)

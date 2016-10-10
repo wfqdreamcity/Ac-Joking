@@ -5,19 +5,69 @@ import (
 	"lib"
 	"couchbase"
 	"elasticsearch"
+	"regexp"
+	"strings"
+	"encoding/json"
 )
 
 
-
+//新闻列表页
 func GetNewsList(rw http.ResponseWriter ,r *http.Request){
 
 	lib.Success(rw ,"这是一个新闻列表页")
 }
 
+//获取置顶新闻接口
+func GetTopNewList(rw http.ResponseWriter , r *http.Request){
+
+	para , ok := lib.CheckParameter(rw , r,"userId")
+	if !ok {
+		return
+	}
+
+	NewsId , err := lib.Rclient.Keys("is_top_new:*").Result()
+	if err != nil {
+		lib.Error(rw , "oop,get top new fail !"+err.Error())
+		return
+	}
+	var key string
+	//data := make(map[string]interface{})
+
+	for _ , v := range NewsId {
+		key = v
+	}
+
+	str , err := lib.Rclient.Get(key).Bytes()
+	if err != nil {
+		lib.Error(rw , "oop ,获取json数据失败 ！"+err.Error())
+		return
+	}
+
+	var news interface{}
+
+	err = json.Unmarshal(str,&news)
+	if err != nil {
+		lib.Error(rw , "oop ,解析json错误 !"+err.Error())
+		return
+	}
+
+	newArray := news.(map[string]interface{})
+
+	//查看当前用户是否关注实体
+	id := newArray["entity_ids"].(string)
+	if ok := couchbase.GetRelationEntity(para["userId"],id) ; ok {
+		newArray["is_collected"] = "1";
+	}else{
+		newArray["is_collected"] = "0";
+	}
+
+	lib.Success(rw,newArray)
+}
+
 //获取新闻正文接口
 func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 
-	para , ok := lib.CheckParameter(rw , r, "newsId","userId")
+	para , ok := lib.CheckParameter(rw , r, "newsId","userId","is_wifi")
 	if !ok {
 		return
 	}
@@ -26,8 +76,25 @@ func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 
 	content := couchbase.GetContent(para["newsId"])
 
+	newscontent := content.Content
+
+	//如果不是是wifi环境下使用小图
+	if para["is_wifi"] == "no" {
+		//获取图片url
+		reg, _ := regexp.Compile(`src=['|"]{1}(.*?)['|"]{1}`)
+		newurls := reg.FindAllStringSubmatch(content.Content, -1)
+		urls := make(map[string]string)
+		for _, v := range newurls {
+			urls[v[1]] = v[1] + "/thumbnail/!12p/sourceurl=" + v[1]
+		}
+		//替换原链接
+		for i , v := range urls {
+			newscontent = strings.Replace(newscontent,i,v,1)
+		}
+	}
+
 	data["id"] = content.Id
-	data["n_c"] = content.Content
+	data["n_c"] =newscontent
 
 	source_other := couchbase.GetSource(para["newsId"])
 
@@ -44,6 +111,7 @@ func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 	news := elasticsearch.GetNewsDetailById(para["newsId"])
 
 	data["n_s"] = news
+	data["is_wifi"] = para["is_wifi"]
 
 
 

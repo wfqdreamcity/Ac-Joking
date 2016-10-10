@@ -3,7 +3,6 @@ package entity
 import (
 	"lib"
 	"net/http"
-	"log"
 	"strconv"
 	"elasticsearch"
 )
