@@ -76,3 +76,24 @@ func GetCommentsByNewId(news_id string,ctype string,start int,size int) []interf
 
 	return list
 }
+
+//获取新闻评论总数
+func GetCommentsCountById(news_id string) interface{}{
+	var query *gocb.N1qlQuery
+
+	query = gocb.NewN1qlQuery("SELECT COUNT(id) AS num From comments WHERE news_id = $1")
+
+	rows, err := bucket.ExecuteN1qlQuery(query, []interface{}{news_id})
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	var num interface{}
+	row := make(map[string]interface{})
+	for rows.Next(&row) {
+		num = row["num"]
+	}
+
+	return num
+}
