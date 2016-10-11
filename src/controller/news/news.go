@@ -20,10 +20,10 @@ func GetNewsList(rw http.ResponseWriter ,r *http.Request){
 //获取置顶新闻接口
 func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 
-	para , ok := lib.CheckParameter(rw , r,"userId")
-	if !ok {
-		return
-	}
+	//para , ok := lib.CheckParameter(rw , r,"userId")
+	//if !ok {
+	//	return
+	//}
 
 	NewsId , err := lib.Rclient.Keys("is_top_new:*").Result()
 	if err != nil {
@@ -53,15 +53,29 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 
 	newArray := news.(map[string]interface{})
 
-	//查看当前用户是否关注实体
-	id := newArray["entity_ids"].(string)
-	if ok := couchbase.GetRelationEntity(para["userId"],id) ; ok {
-		newArray["is_collected"] = "1";
-	}else{
-		newArray["is_collected"] = "0";
-	}
+	//新闻详情
+	content := make(map[string]interface{})
+	content["id"] = newArray["id"]
+	content["news_title"] = newArray["title"]
+	content["list_images_style"] = newArray["list_images_style"]
+	content["list_images"] = newArray["list_images"]
+	content["news_source"] = newArray["news_source"]
+	id := newArray["id"]
+	newid := id.(string)
+	content["count"] = couchbase.GetCommentsCountById(newid)
 
-	lib.Success(rw,newArray)
+	//卡片
+	list := make(map[string]interface{})
+	list["style"] = "13"
+	list["entity_id"] = newArray["entity_ids"]
+	list["entity_name"] = newArray["entity_names"]
+	//list["create_time"] = newArray["create_time"]
+	list["img"] = newArray["img"]
+	list["data"] = content
+
+
+
+	lib.Success(rw,list)
 }
 
 //获取新闻正文接口
