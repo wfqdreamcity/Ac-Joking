@@ -78,7 +78,7 @@ func GetCommentsByNewId(news_id string,ctype string,start int,size int) []interf
 }
 
 //获取新闻评论总数
-func GetCommentsCountById(news_id string) interface{}{
+func GetCommentsCountById(news_id string) float64{
 	var query *gocb.N1qlQuery
 
 	query = gocb.NewN1qlQuery("SELECT COUNT(id) AS num From comments WHERE news_id = $1")
@@ -89,10 +89,10 @@ func GetCommentsCountById(news_id string) interface{}{
 	}
 	defer rows.Close()
 
-	var num interface{}
+	var num float64
 	row := make(map[string]interface{})
 	for rows.Next(&row) {
-		num = row["num"]
+		num = row["num"].(float64)
 	}
 
 	return num
