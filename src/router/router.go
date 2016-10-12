@@ -22,6 +22,7 @@ func Router()  {
 
 	//feed流相关
 	lib.HandleFuncMiddle("/gettopnew",news.GetTopNewList)
+	lib.HandleFuncMiddle("/getfeedvideo",news.GetFeedVideo)
 
 	//获取文章详情页
 	lib.HandleFuncMiddle("/getnewslist",news.GetNewsList)
