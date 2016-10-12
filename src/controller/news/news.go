@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"encoding/json"
+	"strconv"
 )
 
 
@@ -60,13 +61,15 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 	content["list_images_style"] = newArray["list_images_style"]
 	content["list_images"] = newArray["list_images"]
 	content["news_source"] = newArray["news_source"]
+	content["link_type"] = "native"
 	id := newArray["id"]
 	newid := id.(string)
-	content["count"] = couchbase.GetCommentsCountById(newid)
+	num_int := couchbase.GetCommentsCountById(newid)
+	content["count"] = strconv.Itoa(int(num_int))
 
 	//卡片
 	list := make(map[string]interface{})
-	list["style"] = "13"
+	list["style"] = 13
 	list["entity_id"] = newArray["entity_ids"]
 	list["entity_name"] = newArray["entity_names"]
 	//list["create_time"] = newArray["create_time"]
@@ -76,6 +79,34 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 
 
 	lib.Success(rw,list)
+}
+
+//获取视频列表
+func GetFeedVideo(rw http.ResponseWriter ,r *http.Request){
+
+	page :=  1
+	size := 10
+	userId :="0"
+
+	r.ParseForm()
+	if len(r.Form["page"]) > 0 {
+		page  , _ = strconv.Atoi(r.Form["page"][0])
+	}
+	if len(r.Form["size"]) > 0 {
+		size , _ = strconv.Atoi(r.Form["size"][0])
+	}
+	if len(r.Form["userId"]) > 0 {
+		userId = r.Form["userId"][0]
+	}
+
+	list , err := elasticsearch.Esearch(page , size , userId)
+
+	if err != nil {
+		lib.Error(rw , err.Error())
+		return
+	}
+
+	lib.Success(rw ,list)
 }
 
 //获取新闻正文接口
