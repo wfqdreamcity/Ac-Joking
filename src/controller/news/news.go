@@ -67,6 +67,11 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 	num_int := couchbase.GetCommentsCountById(newid)
 	content["count"] = strconv.Itoa(int(num_int))
 
+	//添加一层数组结果适配客户端
+	result :=  make([]interface{},0)
+
+	result = append(result,content)
+
 	//卡片
 	list := make(map[string]interface{})
 	list["style"] = 13
@@ -74,7 +79,7 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 	list["entity_name"] = newArray["entity_names"]
 	//list["create_time"] = newArray["create_time"]
 	list["img"] = newArray["img"]
-	list["data"] = content
+	list["data"] = result
 
 
 
