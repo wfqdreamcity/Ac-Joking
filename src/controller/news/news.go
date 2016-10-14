@@ -21,10 +21,10 @@ func GetNewsList(rw http.ResponseWriter ,r *http.Request){
 //获取置顶新闻接口
 func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 
-	//para , ok := lib.CheckParameter(rw , r,"userId")
-	//if !ok {
-	//	return
-	//}
+	para , ok := lib.CheckParameter(rw , r,"userId")
+	if !ok {
+		return
+	}
 
 	NewsId , err := lib.Rclient.Keys("is_top_new:*").Result()
 	if err != nil {
@@ -79,6 +79,12 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 	list["entity_name"] = newArray["entity_names"]
 	//list["create_time"] = newArray["create_time"]
 	list["img"] = newArray["img"]
+	//查看当前用户是否关注实体
+	if ok := couchbase.GetRelationEntity(para["userId"],newArray["entity_ids"].(string)) ; ok {
+		list["is_followed"] = "1";
+	}else{
+		list["is_followed"] = "0";
+	}
 	list["data"] = result
 
 

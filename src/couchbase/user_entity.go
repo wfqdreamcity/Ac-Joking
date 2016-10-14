@@ -23,14 +23,12 @@ func init(){
 	bucketRelationEntity =buc
 }
 
-//获取新闻评论
+//判断是否已经关注
 func GetRelationEntity(userId , entityId string) bool{
 
 	var query *gocb.N1qlQuery
 
-	//最热评论
-	query = gocb.NewN1qlQuery("SELECT count(*) FROM user_entity WHERE start_id = $1 and end_id = $2 and relation=11")
-
+	query = gocb.NewN1qlQuery("SELECT COUNT(end_id) AS num From user_entity WHERE start_id = $1 and end_id = $2 and relation='11'")
 
 	rows, err := bucket.ExecuteN1qlQuery(query, []interface{}{userId,entityId})
 	if err != nil {
@@ -40,7 +38,8 @@ func GetRelationEntity(userId , entityId string) bool{
 
 	row := make(map[string]interface{})
 	for rows.Next(&row) {
-		if row["count(*)"] != nil {
+		num := row["num"].(float64)
+		if num > 0 {
 			return true
 		}
 	}
