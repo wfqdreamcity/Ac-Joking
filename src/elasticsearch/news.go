@@ -9,13 +9,16 @@ import (
 	//"time"
 )
 
+//新闻列表类型（不含content）
 type news struct {
 	Click_count json.Number `json:"click_count"`
 	Comment_count json.Number `json:"comment_count"`
 	Create_time json.Number	`json:"create_time"`
 	Duration json.Number `json:"duration"`
 	Entity_ids string `json:"entity_ids"`
+	Entity_id string `json:"entity_id"`
 	Entity_names string `json:"entity_names"`
+	Entity_name string `json:"entity_name"`
 	First_class_ids string `json:"first_class_ids"`
 	Id string `json:"id"`
 	Is_hot string `json:"is_hot"`
@@ -25,6 +28,28 @@ type news struct {
 	Org_url string `json:"org_url"`
 	Pub_time json.Number `json:"pub_time"`
 	Title string `json:"title"`
+}
+
+//新闻详情类型（含content）
+type new struct {
+	Click_count json.Number `json:"click_count"`
+	Comment_count json.Number `json:"comment_count"`
+	Create_time json.Number	`json:"create_time"`
+	Duration json.Number `json:"duration"`
+	Entity_ids string `json:"entity_ids"`
+	Entity_id string `json:"entity_id"`
+	Entity_names string `json:"entity_names"`
+	Entity_name string `json:"entity_name"`
+	First_class_ids string `json:"first_class_ids"`
+	Id string `json:"id"`
+	Is_hot string `json:"is_hot"`
+	List_images string `json:"list_images"`
+	List_images_style json.Number `json:"list_images_style"`
+	New_source string `json:"new_source"`
+	Org_url string `json:"org_url"`
+	Pub_time json.Number `json:"pub_time"`
+	Title string `json:"title"`
+	Content string `json:"content"`
 }
 
 func Esearch(page int , size int ,userid string) ([]news ,error){
