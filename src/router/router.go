@@ -27,7 +27,10 @@ func Router()  {
 	//获取文章详情页
 	lib.HandleFuncMiddle("/getnewslist",news.GetNewsList)
 	lib.HandleFuncMiddle("/getnewscontent",news.GetNewsContent)
+	lib.HandleFuncMiddle("/getnewattributewithoutcontent",news.GetNewsAttributeByIdWithoutContent)
 
+	//实体相关
+	lib.HandleFuncMiddle("/getrelationforentityid",entity.GetRelationForEntityId)
 	lib.HandleFuncMiddle("/getentitylist",entity.GetEntityList)
 	lib.HandleFuncMiddle("/getentityes",entity.IndexEsearch)
 
