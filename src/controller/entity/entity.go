@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"elasticsearch"
+	"couchbase"
 )
 
 type Entityinfo struct {
@@ -12,6 +13,19 @@ type Entityinfo struct {
 	NAME string
 	NICKNAMES string
 	IMG string
+}
+
+//查看当前用户是否已经关注实体
+func GetRelationForEntityId(rw http.ResponseWriter, r *http.Request){
+
+	para , ok := lib.CheckParameter(rw,r,"userId","entityId")
+	if !ok {
+		return
+	}
+
+	ok = couchbase.GetRelationEntity(para["userId"],para["entityId"])
+
+	lib.Success(rw , ok)
 }
 
 func GetEntityList(rw http.ResponseWriter , r *http.Request){
