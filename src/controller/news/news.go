@@ -26,14 +26,14 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 		return
 	}
 
+	//redis 查找，查看是否含有置顶新闻（正常情况下就一条数据）
 	NewsId , err := lib.Rclient.Keys("is_top_new:*").Result()
 	if err != nil {
 		lib.Error(rw , "oop,get top new fail !"+err.Error())
 		return
 	}
-	var key string
-	//data := make(map[string]interface{})
 
+	var key string
 	for _ , v := range NewsId {
 		key = v
 	}
@@ -130,15 +130,31 @@ func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 
 	data := make(map[string]interface{})
 
-	content := couchbase.GetContent(para["newsId"])
+	//content := couchbase.GetContent(para["newsId"])
+	paras := make(map[string]string)
+	paras["newsId"] = para["newsId"]
+	content , err := lib.HbaseGet("/news/getContentById",paras)
+	if err !=  nil {
+		lib.Error(rw , "oop ,get new's content by hbase error!!!"+err.Error())
+		return
+	}
 
-	newscontent := content.Content
+	new := make(map[string]interface{})
+	json.Unmarshal(content,&new)
+
+	if new["statusCode"] != "200" {
+		lib.Error(rw , "hbase获取数据 失败！")
+	}
+
+	newdetail := new["response"].(map[string]interface{})
+	newcontent := newdetail["data"].(string)
+	newscontent :=newcontent
 
 	//如果不是是wifi环境下使用小图
-	if para["is_wifi"] == "no" {
+	if para["is_wifi"] != "1" {
 		//获取图片url
 		reg, _ := regexp.Compile(`src=['|"]{1}(.*?)['|"]{1}`)
-		newurls := reg.FindAllStringSubmatch(content.Content, -1)
+		newurls := reg.FindAllStringSubmatch(newcontent, -1)
 		urls := make(map[string]string)
 		for _, v := range newurls {
 			urls[v[1]] = v[1] + "/thumbnail/!12p/sourceurl=" + v[1]
@@ -149,7 +165,7 @@ func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 		}
 	}
 
-	data["id"] = content.Id
+	data["id"] = para["newsId"]
 	data["n_c"] =newscontent
 
 	source_other := couchbase.GetSource(para["newsId"])
@@ -175,6 +191,18 @@ func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 	lib.Success(rw ,data)
 
 
+}
+
+//获取新闻属性信息（除正文es获取）
+func GetNewsAttributeByIdWithoutContent(rw http.ResponseWriter ,r *http.Request){
+	para , ok := lib.CheckParameter(rw , r, "newsId","userId")
+	if !ok {
+		return
+	}
+
+	new := elasticsearch.GetNewsDetailById(para["newsId"])
+
+	lib.Success(rw,new)
 }
 
 //获取新闻评论
