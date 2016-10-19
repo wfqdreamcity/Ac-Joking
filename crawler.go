@@ -7,6 +7,7 @@ import (
 	//"bufio"
 	//"os"
 	//"strings"
+	"os"
 )
 
 func main() {
@@ -41,6 +42,7 @@ func main() {
 	crawler_url ="http://www.qiushibaike.com/"
 
 	url = url+"?url="+crawler_url
+	url = crawler_url
 
 	for i:= 0 ; i< number ; i++{
 
@@ -70,10 +72,38 @@ func crawlerMuilt(url string){
 
 func crawlerSingle(url string){
 	for {
-		_ , err := http.Get(url)
+		resp , err := http.Get(url)
 
 		if err != nil {
 			panic(err)
 		}
+		fmt.Println(url)
+		fmt.Println(resp.Body)
+		writeFile(resp.Proto)
+	}
+}
+
+func writeFile(content string){
+	filename :="qiushi.log"
+
+	if _ , err := os.Stat(filename) ; err != nil {
+		fmt.Println("文件不存在创建文件"+err.Error())
+		os.Create(filename)
+	}
+
+	f ,err := os.OpenFile(filename,os.O_RDWR|os.O_APPEND,0666)
+	if err != nil {
+		fmt.Println("打开文件失败！ "+err.Error())
+	}
+	defer f.Close()
+
+	time := time.Now().Format("2006-01-02 15:04:05")
+
+        var n int
+	n , err = f.WriteString(time+content+"\r\n")
+	if err != nil {
+		fmt.Println(time+":写入文件失败！ "+err.Error())
+	}else {
+		fmt.Println(time+":写入",n,"字节！！！")
 	}
 }
