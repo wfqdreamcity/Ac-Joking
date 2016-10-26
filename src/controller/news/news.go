@@ -26,10 +26,11 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 		return
 	}
 
+	err_result := ""
 	//redis 查找，查看是否含有置顶新闻（正常情况下就一条数据）
 	NewsId , err := lib.Rclient.Keys("is_top_new:*").Result()
 	if err != nil {
-		lib.Error(rw , "oop,get top new fail !"+err.Error())
+		lib.Success(rw ,err_result)
 		return
 	}
 
@@ -40,7 +41,7 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 
 	str , err := lib.Rclient.Get(key).Bytes()
 	if err != nil {
-		lib.Error(rw , "oop ,获取json数据失败 ！"+err.Error())
+		lib.Success(rw , err_result)
 		return
 	}
 
@@ -48,7 +49,7 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 
 	err = json.Unmarshal(str,&news)
 	if err != nil {
-		lib.Error(rw , "oop ,解析json错误 !"+err.Error())
+		lib.Success(rw , err_result)
 		return
 	}
 
@@ -95,6 +96,10 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 //获取视频列表
 func GetFeedVideo(rw http.ResponseWriter ,r *http.Request){
 
+	para , ok := lib.CheckParameter(rw , r,"userId")
+	if !ok {
+		return
+	}
 	page :=  1
 	size := 10
 	userId :="0"
@@ -135,7 +140,7 @@ func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 	paras["newsId"] = para["newsId"]
 	content , err := lib.HbaseGet("/news/getContentById",paras)
 	if err !=  nil {
-		lib.Error(rw , "oop ,get new's content by hbase error!!!"+err.Error())
+		lib.Error(rw , "oop ,get new's content by hbase error!!!")
 		return
 	}
 
