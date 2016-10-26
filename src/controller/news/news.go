@@ -96,10 +96,6 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 //获取视频列表
 func GetFeedVideo(rw http.ResponseWriter ,r *http.Request){
 
-	para , ok := lib.CheckParameter(rw , r,"userId")
-	if !ok {
-		return
-	}
 	page :=  1
 	size := 10
 	userId :="0"
