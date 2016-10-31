@@ -21,18 +21,18 @@ func Router()  {
 	lib.HandleFunc("/gettoken",token.GetToken)
 
 	//feed流相关
+	lib.HandleFuncMiddle("/getnewslist",news.GetFeedNew)
 	lib.HandleFuncMiddle("/gettopnew",news.GetTopNewList)
 	lib.HandleFuncMiddle("/getfeedvideo",news.GetFeedVideo)
+	lib.HandleFuncMiddle("/getfeedimage",news.GetFeedImage)
 
 	//获取文章详情页
-	lib.HandleFuncMiddle("/getnewslist",news.GetNewsList)
-	lib.HandleFuncMiddle("/getnewscontent",news.GetNewsContent)
-	lib.HandleFuncMiddle("/getnewattributewithoutcontent",news.GetNewsAttributeByIdWithoutContent)
+	lib.HandleFuncMiddle("/getnewscontent",news.GetNewsContent) //获取文章正文
+	lib.HandleFuncMiddle("/getnewattributewithoutcontent",news.GetNewsAttributeByIdWithoutContent)//获取文章相关属性不包含正文
 
 	//实体相关
 	lib.HandleFuncMiddle("/getrelationforentityid",entity.GetRelationForEntityId)
 	lib.HandleFuncMiddle("/getentitylist",entity.GetEntityList)
-	lib.HandleFuncMiddle("/getentityes",entity.IndexEsearch)
 
 
 	//获取评论

@@ -3,8 +3,6 @@ package entity
 import (
 	"lib"
 	"net/http"
-	"strconv"
-	"elasticsearch"
 	"couchbase"
 )
 
@@ -27,7 +25,7 @@ func GetRelationForEntityId(rw http.ResponseWriter, r *http.Request){
 
 	lib.Success(rw , ok)
 }
-
+//获取实体列表
 func GetEntityList(rw http.ResponseWriter , r *http.Request){
 
 	start , size := lib.GetPageAndSize(r)
@@ -59,32 +57,6 @@ func GetEntityList(rw http.ResponseWriter , r *http.Request){
 	lib.Success(rw , list)
 }
 
-func IndexEsearch(rw http.ResponseWriter ,r *http.Request){
-
-	page :=  1
-	size := 10
-	userId :="0"
-
-	r.ParseForm()
-	if len(r.Form["page"]) > 0 {
-		page  , _ = strconv.Atoi(r.Form["page"][0])
-	}
-	if len(r.Form["size"]) > 0 {
-		size , _ = strconv.Atoi(r.Form["size"][0])
-	}
-	if len(r.Form["userId"]) > 0 {
-		userId = r.Form["userId"][0]
-	}
-
-	list , err := elasticsearch.Esearch(page , size , userId)
-
-	if err != nil {
-		lib.Error(rw , err.Error())
-		return
-	}
-
-	lib.Success(rw ,list)
-}
 //func GetStream(rw http.ResponseWriter ,r *http.Request){
 //
 //	page :=  1

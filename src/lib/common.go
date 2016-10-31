@@ -149,3 +149,12 @@ func GetPageAndSize(r *http.Request) (int , int){
 	return start , size
 
 }
+
+//验证错误(提取公共方法预留日志处理)
+func CheckError(err error) (bool , error) {
+	if err != nil {
+		return false , err
+	}else {
+		return true  , err
+	}
+}

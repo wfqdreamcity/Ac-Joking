@@ -28,6 +28,7 @@ type news struct {
 	Org_url string `json:"org_url"`
 	Pub_time json.Number `json:"pub_time"`
 	Title string `json:"title"`
+	Image_list []string `json:"image_list"`
 }
 
 //新闻详情类型（含content）
@@ -52,17 +53,23 @@ type new struct {
 	Content string `json:"content"`
 }
 
-func Esearch(page int , size int ,userid string) ([]news ,error){
 
+/*
+*获取feed流信息
+*start int 数据开始位置
+*size int 每页显示数据条数
+*UserId string 用户id
+*news_type string 新闻类型：news_video 短视频 ，news_image 图集
+*/
+func GetListByEsearch(start int , size int ,UserId string , news_type string) ([]news ,error){
 	list := make([]news , 0)
-	start := page*size
 
 	query := elastic.NewBoolQuery()
 	//querymatch := elastic.NewMatchPhraseQuery("user","匿名")
 	//query = query.Should(querymatch)
 
 	//获取用户浏览记录
-	value , _ := lib.Rclient.HGet("Userhistory",userid).Result()
+	value , _ := lib.Rclient.HGet("Userhistory",UserId).Result()
 	ids := make([]string,0)
 	ids = strings.Split(value,",")
 	for _ , v := range ids {
@@ -71,7 +78,7 @@ func Esearch(page int , size int ,userid string) ([]news ,error){
 	}
 
 	searchResult , err := lib.Eclient.Search().
-		Index("nm*").Type("news_video").Query(query).From(start).Size(size).Sort("pub_time",false).Pretty(true).Do()
+		Index("nm*").Type(news_type).Query(query).From(start).Size(size).Sort("pub_time",false).Pretty(true).Do()
 
 	if err != nil {
 		return list ,err
@@ -79,8 +86,6 @@ func Esearch(page int , size int ,userid string) ([]news ,error){
 
 	// Here's how you iterate through results with full control over each step.
 	if searchResult.Hits.TotalHits > 0 {
-		//fmt.Printf("Found a total of %d Joking\n", searchResult.Hits.TotalHits)
-		//fmt.Printf("Found a maxscore of %d Joking\n", searchResult.Hits.MaxScore)
 
 		for _, hit := range searchResult.Hits.Hits {
 
@@ -97,90 +102,17 @@ func Esearch(page int , size int ,userid string) ([]news ,error){
 		}
 	} else {
 
-		fmt.Print("Found no Joking\n")
+		fmt.Print("Found no News\n")
 	}
 
 	//处理用户浏览记录
-	handTheValue(value,userid)
+	handTheValue(value,UserId)
 
 	return list ,nil
+
 }
 
-//type Joking struct {
-//	Id string
-//	User string
-//	Content string
-//	Time json.Number
-//}
-//
-//func EsearchForStream(userid string,page , size int) ([]Joking ,error){
-//
-//	list := make([]Joking , 0)
-//	start := page*size
-//
-//	time := time.Now().Format("2006-01-02 15:04:05")
-//
-//	fmt.Println(time)
-//
-//	query := elastic.NewBoolQuery()
-//	//querymatch := elastic.NewMatchPhraseQuery("user","匿名")
-//	//query = query.Should(querymatch)
-//
-//	//获取用户浏览记录
-//	value , _ := lib.Rclient.HGet("Userhistory",userid).Result()
-//	ids := make([]string,0)
-//	ids = strings.Split(value,",")
-//	for _ , v := range ids {
-//		queryIdTerm := elastic.NewTermQuery("id",v)
-//		query = query.MustNot(queryIdTerm)
-//	}
-//
-//	//时间过滤
-//	queryFilter := elastic.NewFilterAggregation()
-//
-//	query = query.Filter(queryFilter)
-//
-//
-//	searchResult , err := lib.Eclient.Search().Query(query).
-//		Index("crawler").Type("crawler").From(start).Size(size).Sort("time",false).Pretty(true).Do()
-//
-//	if err != nil {
-//		return list ,err
-//	}
-//
-//	// Here's how you iterate through results with full control over each step.
-//	if searchResult.Hits.TotalHits > 0 {
-//		fmt.Printf("Found a total of %d Joking\n", searchResult.Hits.TotalHits)
-//		//fmt.Printf("Found a maxscore of %d Joking\n", searchResult.Hits.MaxScore)
-//		//var jok map[string]string
-//		// Iterate through results
-//		for _, hit := range searchResult.Hits.Hits {
-//			// hit.Index contains the name of the index
-//
-//			// Deserialize hit.Source into a Tweet (could also be just a map[string]interface{}).
-//			var t Joking
-//			err := json.Unmarshal(*hit.Source, &t)
-//			if err != nil {
-//				// Deserialization failed
-//				panic(err)
-//			}
-//
-//			value = t.Id+","+value
-//
-//			// Work with Joking
-//			list = append(list , t)
-//		}
-//	} else {
-//		// No hits
-//		fmt.Print("Found no Joking\n")
-//	}
-//
-//	//处理用户浏览记录
-//	handTheValue(value,userid)
-//
-//	return list ,nil
-//}
-
+//处理用户浏览记录
 func handTheValue(value ,userid string){
 	idsArray :=make([]string , 0)
 
@@ -204,7 +136,6 @@ func handTheValue(value ,userid string){
 }
 
 //通过id获取新闻内容
-
 func GetNewsDetailById(id string) *news{
 
 	var new news

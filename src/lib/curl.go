@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 )
 
+//通过dataserver获取数据
 func HbaseGet(method string,para map[string]string) ([]byte , error){
 	var url string
 	url = hbasehost+method+"?token="+dataToken+"&"

@@ -13,9 +13,20 @@ import (
 
 
 //新闻列表页
-func GetNewsList(rw http.ResponseWriter ,r *http.Request){
+func GetFeedNew(rw http.ResponseWriter ,r *http.Request){
 
-	lib.Success(rw ,"这是一个新闻列表页")
+	para , ok := lib.CheckParameter(rw ,r,"userId")
+	if !ok {
+		return
+	}
+
+	start , size := lib.GetPageAndSize(r)
+
+	list , err := elasticsearch.GetListByEsearch(start ,size ,para["userId"],"news")
+
+	ok , _ = lib.CheckError(err)
+
+	lib.Success(rw , list)
 }
 
 //获取置顶新闻接口
@@ -29,7 +40,8 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 	err_result := ""
 	//redis 查找，查看是否含有置顶新闻（正常情况下就一条数据）
 	NewsId , err := lib.Rclient.Keys("is_top_new:*").Result()
-	if err != nil {
+	ok , _ = lib.CheckError(err)
+	if !ok {
 		lib.Success(rw ,err_result)
 		return
 	}
@@ -40,7 +52,8 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 	}
 
 	str , err := lib.Rclient.Get(key).Bytes()
-	if err != nil {
+	ok , _ = lib.CheckError(err)
+	if !ok {
 		lib.Success(rw , err_result)
 		return
 	}
@@ -48,7 +61,8 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 	var news interface{}
 
 	err = json.Unmarshal(str,&news)
-	if err != nil {
+	ok , _ = lib.CheckError(err)
+	if !ok {
 		lib.Success(rw , err_result)
 		return
 	}
@@ -96,30 +110,37 @@ func GetTopNewList(rw http.ResponseWriter , r *http.Request){
 //获取视频列表
 func GetFeedVideo(rw http.ResponseWriter ,r *http.Request){
 
-	page :=  1
-	size := 10
-	userId :="0"
-
-	r.ParseForm()
-	if len(r.Form["page"]) > 0 {
-		page  , _ = strconv.Atoi(r.Form["page"][0])
-	}
-	if len(r.Form["size"]) > 0 {
-		size , _ = strconv.Atoi(r.Form["size"][0])
-	}
-	if len(r.Form["userId"]) > 0 {
-		userId = r.Form["userId"][0]
-	}
-
-	list , err := elasticsearch.Esearch(page , size , userId)
-
-	if err != nil {
-		lib.Error(rw , err.Error())
+	para , ok := lib.CheckParameter(rw ,r,"userId")
+	if !ok {
 		return
 	}
 
+	start , size := lib.GetPageAndSize(r)
+
+	list , err := elasticsearch.GetListByEsearch(start , size , para["userId"],"news_video")
+
+	ok , _ = lib.CheckError(err)
+
 	lib.Success(rw ,list)
 }
+
+//获取图集列表
+func GetFeedImage(rw http.ResponseWriter , r *http.Request){
+	para , ok := lib.CheckParameter(rw ,r,"userId")
+	if !ok {
+		return
+	}
+
+	start , size := lib.GetPageAndSize(r)
+
+	list , err := elasticsearch.GetListByEsearch(start ,size ,para["userId"],"news_image")
+
+	ok , _ = lib.CheckError(err)
+
+	lib.Success(rw , list)
+}
+
+
 
 //获取新闻正文接口
 func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
@@ -135,8 +156,9 @@ func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 	paras := make(map[string]string)
 	paras["newsId"] = para["newsId"]
 	content , err := lib.HbaseGet("/news/getContentById",paras)
-	if err !=  nil {
-		lib.Error(rw , "oop ,get new's content by hbase error!!!")
+
+	ok , _ = lib.CheckError(err)
+	if !ok {
 		return
 	}
 
@@ -145,6 +167,7 @@ func GetNewsContent(rw http.ResponseWriter ,r *http.Request){
 
 	if new["statusCode"] != "200" {
 		lib.Error(rw , "hbase获取数据 失败！")
+		return
 	}
 
 	newdetail := new["response"].(map[string]interface{})
