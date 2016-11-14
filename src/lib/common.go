@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"errors"
 	"strconv"
+	"fmt"
+	"time"
 )
 
 //格式化成功输出
@@ -139,6 +141,7 @@ func GetPageAndSize(r *http.Request) (int , int){
 	r.ParseForm()
 	if len(r.Form["page"]) > 0 {
 		page , _ = strconv.Atoi(r.Form["page"][0])
+		page = page - 1
 	}
 	if len(r.Form["size"]) > 0 {
 		size , _ = strconv.Atoi(r.Form["size"][0])
@@ -153,8 +156,51 @@ func GetPageAndSize(r *http.Request) (int , int){
 //验证错误(提取公共方法预留日志处理)
 func CheckError(err error) (bool , error) {
 	if err != nil {
+		time := time.Now().Format("2006-01-02 15:04:05")
+		fmt.Println(time+": ",err)
 		return false , err
 	}else {
 		return true  , err
 	}
+}
+
+//时间格式化输出
+func TimeFormat(pubTime int64) string {
+
+	var timeFormat string
+	currentTime := time.Now().Unix()
+	pubTime = pubTime /1000
+	tmp := currentTime - pubTime
+	if tmp < 60 {
+		timeFormat ="刚刚"
+	}else if tmp < 3600 {
+		tp := tmp/60
+		tpt := strconv.FormatInt(tp,10)
+		timeFormat =tpt+"分钟前"
+	}else if tmp < 86400 {
+		tp := tmp/3600
+		tpt := strconv.FormatInt(tp,10)
+		timeFormat = tpt+"小时前"
+	}else if tmp < 259200 {//3天内
+		tp := tmp/86400
+		tpt := strconv.FormatInt(tp,10)
+		timeFormat = tpt+"天前"
+	}else{
+		date := time.Unix(pubTime,0)
+		timeFormat = date.Format("01-02 15:04")
+	}
+
+	return timeFormat
+}
+
+//获取cfa地址
+func GetCfaAddressByUserId(userId string) string{
+	url := cfaHost
+
+	return url
+}
+
+//统一输出函数避免每次测试输出是都得引入fmt
+func Println(args ...interface{})  {
+	fmt.Println(args)
 }

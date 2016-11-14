@@ -6,53 +6,10 @@ import (
 	"encoding/json"
 	"gopkg.in/olivere/elastic.v3"
 	"strings"
-	//"time"
+	"errors"
+	"redis"
+	"datatype"
 )
-
-//新闻列表类型（不含content）
-type news struct {
-	Click_count json.Number `json:"click_count"`
-	Comment_count json.Number `json:"comment_count"`
-	Create_time json.Number	`json:"create_time"`
-	Duration json.Number `json:"duration"`
-	Entity_ids string `json:"entity_ids"`
-	Entity_id string `json:"entity_id"`
-	Entity_names string `json:"entity_names"`
-	Entity_name string `json:"entity_name"`
-	First_class_ids string `json:"first_class_ids"`
-	Id string `json:"id"`
-	Is_hot string `json:"is_hot"`
-	List_images string `json:"list_images"`
-	List_images_style json.Number `json:"list_images_style"`
-	New_source string `json:"new_source"`
-	Org_url string `json:"org_url"`
-	Pub_time json.Number `json:"pub_time"`
-	Title string `json:"title"`
-	Image_list []string `json:"image_list"`
-}
-
-//新闻详情类型（含content）
-type new struct {
-	Click_count json.Number `json:"click_count"`
-	Comment_count json.Number `json:"comment_count"`
-	Create_time json.Number	`json:"create_time"`
-	Duration json.Number `json:"duration"`
-	Entity_ids string `json:"entity_ids"`
-	Entity_id string `json:"entity_id"`
-	Entity_names string `json:"entity_names"`
-	Entity_name string `json:"entity_name"`
-	First_class_ids string `json:"first_class_ids"`
-	Id string `json:"id"`
-	Is_hot string `json:"is_hot"`
-	List_images string `json:"list_images"`
-	List_images_style json.Number `json:"list_images_style"`
-	New_source string `json:"new_source"`
-	Org_url string `json:"org_url"`
-	Pub_time json.Number `json:"pub_time"`
-	Title string `json:"title"`
-	Content string `json:"content"`
-}
-
 
 /*
 *获取feed流信息
@@ -61,42 +18,46 @@ type new struct {
 *UserId string 用户id
 *news_type string 新闻类型：news_video 短视频 ，news_image 图集
 */
-func GetListByEsearch(start int , size int ,UserId string , news_type string) ([]news ,error){
-	list := make([]news , 0)
+func GetListByEsearch(start int , size int ,UserId string , news_type string ){
+	//判断管道是否为空（防止高并发时产异步加载产生大量请求）
+	lib.GetEsSource(lib.Chs)
+
+	list := make([]datatype.News , 0)
 
 	query := elastic.NewBoolQuery()
-	//querymatch := elastic.NewMatchPhraseQuery("user","匿名")
-	//query = query.Should(querymatch)
 
 	//获取用户浏览记录
-	value , _ := lib.Rclient.HGet("Userhistory",UserId).Result()
-	ids := make([]string,0)
-	ids = strings.Split(value,",")
+	ids , _ := redis.GetRelationByObjaIdAndFlagFromRedis(UserId , "01" , 0 , 600)
+	newHistoryIds := make([]string,0)
 	for _ , v := range ids {
 		queryIdTerm := elastic.NewTermQuery("id",v)
 		query = query.MustNot(queryIdTerm)
 	}
 
 	searchResult , err := lib.Eclient.Search().
-		Index("nm*").Type(news_type).Query(query).From(start).Size(size).Sort("pub_time",false).Pretty(true).Do()
+		Index("nm*").Type(news_type).Query(query).From(start).Size(size).Sort("create_time",false).Pretty(true).Do()
 
-	if err != nil {
-		return list ,err
+	ok , _ := lib.CheckError(err)
+	if !ok {
+		panic(err)
 	}
+
+	//释放es请求
+	lib.LockSource(lib.Chs)
 
 	// Here's how you iterate through results with full control over each step.
 	if searchResult.Hits.TotalHits > 0 {
 
 		for _, hit := range searchResult.Hits.Hits {
 
-			var t news
+			var t datatype.News
 
 			err := json.Unmarshal(*hit.Source, &t)
 			if err != nil {
 				panic(err)
 			}
 
-			value = t.Id+","+value
+			newHistoryIds = append(newHistoryIds , t.Id)
 
 			list = append(list , t)
 		}
@@ -105,12 +66,120 @@ func GetListByEsearch(start int , size int ,UserId string , news_type string) ([
 		fmt.Print("Found no News\n")
 	}
 
-	//处理用户浏览记录
-	handTheValue(value,UserId)
+	//处理用户浏览记录(异步处理)
+	go redis.SetUserHistoryIntoRedis(UserId , newHistoryIds)
 
-	return list ,nil
+	//处理预加载队列
+	newsList , err := json.Marshal(list)
+	ok , _ = lib.CheckError(err)
+	if !ok {
+		panic(err)
+	}
+	redis.BulkGetNewsInfoForFeedList(UserId , news_type ,newsList)
 
 }
+
+/*
+*图集相关推荐接口
+*newsId 新闻id
+*title 新闻标题
+*返回值 新闻数组分片 和 error
+*/
+func GetRelateByMulitKeyWord(newsId , news_type string ,Mulit map[string]interface{} ,start int , size int) ([]datatype.News ,error) {
+	list := make([]datatype.News , 0)
+
+	query := elastic.NewBoolQuery()
+
+	if Mulit["title"] != nil {
+		queryMatch := elastic.NewMatchQuery("title",Mulit["title"])
+		query = query.Must(queryMatch)
+	}
+
+
+	queryTerm := elastic.NewTermsQuery("id",newsId)
+	query = query.MustNot(queryTerm)
+
+	//time := time.Now().AddDate(0,0,-3).Unix()*1000
+	//queryTime := elastic.NewRangeQuery("pub_time").Gte(time)
+	//query = query.Must(queryTime)
+
+	searchResult , err := lib.Eclient.Search().
+		Index("nm*").Type(news_type).Query(query).From(start).Size(size).Pretty(true).Do()
+
+	if err != nil {
+		return list ,err
+	}
+
+	if searchResult.Hits.TotalHits > 0 {
+
+		for _, hit := range searchResult.Hits.Hits {
+
+			var t datatype.News
+
+			err := json.Unmarshal(*hit.Source, &t)
+			if err != nil {
+				panic(err)
+			}
+
+			list = append(list , t)
+		}
+	} else {
+
+		fmt.Print("Found no News\n")
+	}
+
+	return list ,nil
+}
+
+/*
+*图集相关推荐接口
+*newsId 新闻id
+*title 新闻标题
+*返回值 新闻数组分片 和 error
+*/
+func GetRelateImageByTitle(newsId , title string) ([]datatype.News ,error) {
+	list := make([]datatype.News , 0)
+
+	query := elastic.NewBoolQuery()
+
+	queryMatch := elastic.NewMatchQuery("title",title)
+	query = query.Must(queryMatch)
+
+	queryTerm := elastic.NewTermsQuery("id",newsId)
+	query = query.MustNot(queryTerm)
+
+	//time := time.Now().AddDate(0,0,-3).Unix()*1000
+	//queryTime := elastic.NewRangeQuery("pub_time").Gte(time)
+	//query = query.Must(queryTime)
+
+	searchResult , err := lib.Eclient.Search().
+		Index("nm*").Type("news_image").Query(query).From(0).Size(6).Pretty(true).Do()
+
+	if err != nil {
+		return list ,err
+	}
+
+	if searchResult.Hits.TotalHits > 0 {
+
+		for _, hit := range searchResult.Hits.Hits {
+
+			var t datatype.News
+
+			err := json.Unmarshal(*hit.Source, &t)
+			if err != nil {
+				panic(err)
+			}
+
+			list = append(list , t)
+		}
+	} else {
+
+		fmt.Print("Found no News\n")
+	}
+
+	return list ,nil
+}
+
 
 //处理用户浏览记录
 func handTheValue(value ,userid string){
@@ -136,9 +205,9 @@ func handTheValue(value ,userid string){
 }
 
 //通过id获取新闻内容
-func GetNewsDetailById(id string) *news{
+func GetNewsDetailById(id string) *datatype.News{
 
-	var new news
+	var new datatype.News
 	queryTerm := elastic.NewTermQuery("id",id)
 
 	searchResult , err := lib.Eclient.Search().Index("nm*").Type("news").Query(queryTerm).Pretty(true).Do()
@@ -162,4 +231,77 @@ func GetNewsDetailById(id string) *news{
 
 
 	return &new
+}
+
+//通过id获取新闻内容
+func GetNewsDetailByIdContent(id string) (map[string]interface{} , error){
+
+	new := make(map[string]interface{})
+	queryTerm := elastic.NewTermQuery("id",id)
+
+	searchResult , err := lib.Eclient.Search().Index("nm*").Query(queryTerm).Pretty(true).Do()
+
+	if err != nil {
+		return new , err
+	}
+
+	if searchResult.Hits.TotalHits > 0 {
+
+		arr := searchResult.Hits.Hits
+
+		err := json.Unmarshal(*arr[0].Source, &new)
+		if err != nil {
+			return new , err
+		}
+
+		return new , err
+
+	}else{
+		return new , errors.New("oop ,no maping !!!")
+	}
+}
+
+/*通过id数组获取新闻列表
+*ids id数组分片
+*newsType Es中对应的type
+*/
+func GetNewsListByIdArray(ids []string , newsType string) ([]datatype.News , error){
+	list := make([]datatype.News , 0)
+
+	if len(ids) < 1 {
+		return list , nil
+	}
+
+	query := elastic.NewBoolQuery()
+	for _ , v := range ids {
+		queryTerm := elastic.NewTermsQuery("id", v)
+		query = query.Should(queryTerm)
+	}
+	searchResult , err := lib.Eclient.Search().
+		Index("nm*").Type(newsType).Query(query).Sort("pub_time",false).Pretty(true).Do()
+
+	if err != nil {
+		return list ,err
+	}
+
+	if searchResult.Hits.TotalHits > 0 {
+
+		for _, hit := range searchResult.Hits.Hits {
+
+			var t datatype.News
+
+			err := json.Unmarshal(*hit.Source, &t)
+			if err != nil {
+				panic(err)
+			}
+
+			list = append(list , t)
+		}
+	} else {
+
+		fmt.Print("Found no News\n")
+	}
+
+	return list ,nil
+
 }

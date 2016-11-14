@@ -144,6 +144,9 @@ func getTokenInfo(appKey , secretkey string) (string,error){
 		secret = tokenArray["secret_key"]
 		if secretkey == secret {
 			token = tokenArray["token"]
+			expireTime , _ :=time.ParseDuration("259200s")
+			//设置验证apptoken
+			lib.Rclient.Set("app_token_check:"+token,token,expireTime)
 		}else{
 			return token ,errors.New("oop ,get wrong secret!")
 		}

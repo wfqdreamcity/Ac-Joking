@@ -8,6 +8,9 @@ import (
 
 var Eclient *elastic.Client
 
+//异步加载是锁定es请求
+var EsChannel chan int
+
 func init(){
 	// Create a client
 	cl, err := elastic.NewClient(
@@ -26,4 +29,7 @@ func init(){
 	fmt.Println("elasticsearch is ok!")
 
 	Eclient = cl
+
+	//Create a channel
+	EsChannel = make(chan int)
 }

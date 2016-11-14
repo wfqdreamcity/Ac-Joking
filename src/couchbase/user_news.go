@@ -24,26 +24,25 @@ func init(){
 }
 
 //获取新闻评论
-func GetRelationNews(userId , entityId string) bool{
+func GetRelationNews(userId , newsId ,relateType string) ([]map[string]string , error){
 
 	var query *gocb.N1qlQuery
+	relate := make([]map[string]string,0)
 
 	//最热评论
-	query = gocb.NewN1qlQuery("SELECT count(*) FROM user_news WHERE start_id = $1 and end_id = $2 and relation=11")
+	query = gocb.NewN1qlQuery("SELECT end_id,start_id FROM user_news WHERE start_id = $1 and end_id in ($2) and look_relation=$3")
 
-
-	rows, err := bucketRelationNews.ExecuteN1qlQuery(query, []interface{}{userId,entityId})
+	rows, err := bucketRelationNews.ExecuteN1qlQuery(query, []interface{}{userId,newsId,relateType})
 	if err != nil {
-		panic(err)
+		return relate , err
 	}
 	defer rows.Close()
 
-	row := make(map[string]interface{})
+	row := make(map[string]string)
 	for rows.Next(&row) {
-		if row["count(*)"] != nil {
-			return true
-		}
+
+		relate = append(relate , row)
 	}
 
-	return false
+	return relate , err
 }

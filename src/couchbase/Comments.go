@@ -55,7 +55,7 @@ func GetCommentsByNewId(news_id string,ctype string,start int,size int) []interf
 	// Use query
 	if ctype == "new" {
 		//最新评论
-		query = gocb.NewN1qlQuery("SELECT * FROM comments WHERE news_id = $1 ORDER BY post_time desc LIMIT $2 OFFSET $3")
+		query = gocb.NewN1qlQuery("SELECT * FROM comments WHERE news_id = $1 and up_count <= 3 ORDER BY post_time desc LIMIT $2 OFFSET $3")
 	}else if ctype == "hot"{
 		//最热评论
 		query = gocb.NewN1qlQuery("SELECT * FROM comments WHERE news_id = $1 and up_count > 3 ORDER BY post_time DESC LIMIT $2 OFFSET $3")

@@ -250,6 +250,7 @@ func (f HandlerMidel) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f(w, r)
+	go LastHandle(w , r)
 }
 // HandleFunc registers the handler function for the given pattern.(中间层自定义)
 func (mux *ServeMux) HandleFuncMiddle(pattern string, handler func(http.ResponseWriter, *http.Request)) {
